@@ -1,6 +1,8 @@
 #ifndef DISTRIBUTED_LIST_MEDIAN_H_
 #define DISTRIBUTED_LIST_MEDIAN_H_
 
+#include <iostream>
+#include <cstdint>
 #include <fstream>
 #include <sstream>
 #include <vector>
@@ -9,21 +11,23 @@
 // Class mimicking distributed across nodes array
 class DistributedArray
 {
+    size_t m_size;      // total amount of elements in all nodes
+    size_t m_size_node; // amount of elements on each node. (Assuming it's equal)
+
+    std::vector<std::vector<int64_t> > m_nodes;
+
   public:
-    size_t size;      // total amount of elements in all nodes
-    size_t size_node; // amount of elements on each node. (Assuming it's equal)
-
-    std::vector<std::vector<int> > nodes;
-
     // Read nodes data from a CSV-file filename.
     // Each line is a data for a separate node
-    DistributedArray(std::string filename);
-    DistributedArray(const std::vector<std::vector<int> > &data);
+    DistributedArray(std::string);
+    DistributedArray(const std::vector<std::vector<int64_t> >&);
 
     // Basic operations with elements on a Distributed Array.
+    size_t size();
+    size_t size_node();
+
     void swap(size_t from, size_t to); // Swap two element values via global indeces
-    int get(size_t index);             // Getter
-    void set(int value, size_t index); // Setter
+    int64_t &operator[] (size_t);
 
     void print();
 };
@@ -31,13 +35,11 @@ class DistributedArray
 // Order Statistics functions
 // partition array between given indeces using first index as a pivot element,
 // return index of the new place for first
-size_t partition(DistributedArray array, size_t first, size_t last);
+size_t partition(DistributedArray a, size_t first, size_t last);
+int64_t orderStatistic(DistributedArray a, size_t k, size_t first, size_t last);
 
-// partial k-th order of a partion between given indeces
-int orderStatistic(DistributedArray array, size_t k, size_t first, size_t last);
-
-int kthSmallest(DistributedArray array, size_t k);
-int kthLargest(DistributedArray array, size_t k);
-float median(DistributedArray array);
+int64_t kthSmallest(DistributedArray a, size_t k);
+int64_t kthLargest(DistributedArray a, size_t k);
+float median(DistributedArray a);
 
 #endif // DISTRIBUTED_LIST_MEDIAN_H_

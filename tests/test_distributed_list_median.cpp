@@ -12,30 +12,32 @@ void TestDistributedArrayFromFile(std::string filename) {
 } 
 
 void TestDistributedArrayFromVectors() {
-    std::vector<int> v0 = {1, 2, 3, 4};
-    std::vector<int> v1 = {5, 6, 7, 8};
-    std::vector<int> v2 = {9, 10, 11, 12};
+    std::vector<int64_t> v0 = {1, 2, 3, 4};
+    std::vector<int64_t> v1 = {5, 6, 7, 8};
+    std::vector<int64_t> v2 = {9, 10, 11, 12};
 
-    std::vector<std::vector<int> > data{v0, v1, v2};
+    std::vector<std::vector<int64_t> > data{v0, v1, v2};
 
     DistributedArray a(data);
-    assert(a.get(2) == 3);
-    assert(a.get(8) == 9);
-    std::cout << "* DistributedArray::get - OK" << std::endl;
+    assert(a[2] == 3);
+    assert(a[8] == 9);
+    std::cout << "* DistributedArray::[] get - OK" << std::endl;
 
-    a.set(5, 2);
-    assert(a.get(2) == 5);
+    a[2] = 5;
+    assert(a[2] == 5);
  
-    a.set(3, 2);
-    assert(a.get(2) == 3);
-    std::cout << "* DistributedArray::set - OK" << std::endl;
+    a[2] = 3;
+    assert(a[2] == 3);
+    std::cout << "* DistributedArray::[] set - OK" << std::endl;
 
     a.swap(1, 9);
-    assert(a.get(1) == 10);
-    assert(a.get(9) == 2);
+    assert(a[1] == 10);
+    assert(a[9] == 2);
+
     a.swap(1, 9);
-    assert(a.get(1) == 2);
-    assert(a.get(9) == 10);
+    assert(a[1] == 2);
+    assert(a[9] == 10);
+    
     std::cout << "* DistributedArray::swap - OK" << std::endl;
 } 
 

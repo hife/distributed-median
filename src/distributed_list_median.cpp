@@ -1,7 +1,5 @@
 #include "distributed_list_median.h"
 
-#include <iostream>
-
 // Read nodes data from a CSV file.
 // Each list if data for a separate node
 DistributedArray::DistributedArray(std::string filename)
@@ -14,166 +12,164 @@ DistributedArray::DistributedArray(std::string filename)
         throw std::invalid_argument("File doesn't exist");
     }
 
-    size = 0;
+    m_size = 0;
     // Each line in CSV is a single pool member data
     while (std::getline(infile, line))
     {
         std::stringstream lineStream(line);
 
         // Add new pool member
-        std::vector<int> node;
-        nodes.push_back(node);
+        std::vector<int64_t> node;
+        m_nodes.push_back(node);
 
         // Parse pool member's data
         std::string data;
         while (std::getline(lineStream, data, ','))
         {
-            nodes.back().push_back(std::stoi(data));
-            size++;
+            m_nodes.back().push_back(std::stoi(data));
+            m_size++;
         }
     }
     // Assuming all nodes are the same size.
     // This needs to be adjusted if the nodes are not even
-    size_node = nodes.back().size();
+    m_size_node = m_nodes.back().size();
 }
 
 // Create nodes from a vector of vectors
 // Assuming all the nodes are the same size
-DistributedArray::DistributedArray(const std::vector<std::vector<int> > &data)
+DistributedArray::DistributedArray(const std::vector<std::vector<int64_t> > &data)
 {
-    size = 0;
-    size_node = 0;
+    m_size = 0;
+    m_size_node = 0;
 
     for(size_t i = 0; i < data.size(); i++) {
-        nodes.push_back(data[i]);
+        m_nodes.push_back(data[i]);
 
-        size_node = data[i].size();
-        size += size_node;
+        m_size_node = data[i].size();
+        m_size += m_size_node;
     }
+}
+
+size_t DistributedArray::size() {
+    return m_size;
+}
+
+size_t DistributedArray::size_node() {
+    return m_size_node;
 }
 
 // Distributed operations
 // Swap two elements with given indeces properly selecting nodes
 void DistributedArray::swap(size_t from, size_t to)
 {
-    if (from >= size) {
+    if (from >= m_size) {
         throw std::invalid_argument( "Can't swap. Out of boundries 'from' index." );
     }
 
-    if (to >= size) {
+    if (to >= m_size) {
         throw std::invalid_argument( "Can't swap. Out of boundries 'to' index." );
     }
 
     // Assumption: each node has size_node number of elements
     std::swap(
-        nodes[from / size_node][from % size_node],
-        nodes[to / size_node][to % size_node]);
+        m_nodes[from / m_size_node][from % m_size_node],
+        m_nodes[to / m_size_node][to % m_size_node]);
 }
 
 // get the corresponding index properly selecting nodes
-int DistributedArray::get(size_t index)
+int64_t &DistributedArray::operator[](size_t index)
 {
-    if (index >= size || index < 0) {
+    if (index >= m_size) {
         throw std::invalid_argument( "Index is out of boundries." );    
     }
 
-    return nodes[index / size_node][index % size_node];
-}
-
-// get the corresponding element value properly selecting nodes
-void DistributedArray::set(int value, size_t index)
-{
-    if (index >= size || index < 0) {
-        throw std::invalid_argument( "Index is out of boundries." );    
-    }
-    
-    nodes[index / size_node][index % size_node] = value;
+    return m_nodes[index / m_size_node][index % m_size_node];
 }
 
 void DistributedArray::print()
 {
-    for (size_t i = 0; i < nodes.size(); i++)
+    for (size_t i = 0; i < m_nodes.size(); i++)
     {
         std::cout << "Node " << i << ":";
 
-        for (size_t j = 0; j < nodes[i].size(); j++)
+        for (size_t j = 0; j < m_nodes[i].size(); j++)
         {
-            std::cout << " " << nodes[i][j];
+            std::cout << " " << m_nodes[i][j];
         }
         std::cout << std::endl;
     }
 }
 
 // Order Statistics functions
-// partition array between given indeces using first index as a pivot element,
-// return index of the new place for first
-size_t partition(DistributedArray array, size_t first, size_t last)
+// TODO: create a separate class for abstracted Order Statistics
+size_t partition(DistributedArray a, size_t first, size_t last)
 {
-    int pivot = array.get(first);
+    int64_t pivot = a[first];
     size_t pivotPosition = first;
 
     first++;
     while (first <= last)
     {
         // Check right
-        while (first <= last && array.get(first) > pivot)
+        while (first <= last && a[first] > pivot)
             first++;
 
         // Check left
-        while (last >= first && array.get(last) <= pivot)
+        while (last >= first && a[last] <= pivot)
             last--;
 
         // Move into the proper position
         if (first > last)
         {
-            array.swap(pivotPosition, last);
+            a.swap(pivotPosition, last);
         }
         else
         {
-            array.swap(first, last);
+            a.swap(first, last);
         }
     }
     return last;
 }
 
-int orderStatistic(DistributedArray array, size_t k, size_t first, size_t last)
+int64_t orderStatistic(DistributedArray a, size_t k, size_t first, size_t last)
 {
-    if (k > array.size) {
+    if (k > a.size()) {
         throw std::invalid_argument( "Requested order k is out of boundries." );    
     }
 
-    size_t pivotPosition = partition(array, first, last);
+    size_t pivotPosition = partition(a, first, last);
 
     // Check if the element is in the desired position k
     if (pivotPosition == k - 1)
-        return array.get(k - 1);
+        return a[k - 1];
 
     return 
         pivotPosition > k - 1 ? 
-            orderStatistic(array, k, first, pivotPosition - 1) : 
-            orderStatistic(array, k, pivotPosition + 1, last);
+            orderStatistic(a, k, first, pivotPosition - 1) : 
+            orderStatistic(a, k, pivotPosition + 1, last);
 }
 
-int kthSmallest(DistributedArray array, size_t k)
+int64_t kthSmallest(DistributedArray a, size_t k)
 {
-    return orderStatistic(array, k, 0, array.size - 1);
+    return orderStatistic(a, k, 0, a.size() - 1);
 }
 
-int kthLargest(DistributedArray array, size_t k)
+int64_t kthLargest(DistributedArray a, size_t k)
 {
-    return orderStatistic(array, array.size - k + 1, 0, array.size - 1);
+    return orderStatistic(a, a.size() - k + 1, 0, a.size() - 1);
 }
 
-float median(DistributedArray array)
+float median(DistributedArray a)
 {
     // Median of the array will be middle element 
     // or avarage of two middle elements in case of even size of array 
-    size_t mid = array.size / 2;
+    size_t mid = a.size() / 2;
 
     // uneven size
-    if (array.size % 2)
-        return kthSmallest(array, mid + 1);
+    if (a.size() % 2)
+        return kthSmallest(a, mid + 1);
 
     // even size
-    return float(kthSmallest(array, mid) + kthLargest(array, mid)) / 2;
+    return float(kthSmallest(a, mid) + kthLargest(a, mid)) / 2;
 }
+
