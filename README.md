@@ -14,11 +14,20 @@ Notes:
 - Each line is a simple comma-separated list of ints. 
 - Your program should print the median to stdout. 
 
-Build:
+# Solution 
+Using order statistics (https://en.wikipedia.org/wiki/Order_statistic) 
+k-th smallest, where k is pointing to the middle element(s)
 
+# Build:
     make
 
-Clean:
+# Run
+    dmedian FILE
 
+# Test
+    cd tests
+    make
+    ./run_tests
+
+# Clean:
     make clean
-# distributed-median

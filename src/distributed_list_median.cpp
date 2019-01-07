@@ -9,7 +9,10 @@ DistributedArray::DistributedArray(std::string filename)
     std::ifstream infile(filename);
     std::string line;
 
-    if (! infile) return;
+    if (infile.fail()) 
+    { 
+        throw std::invalid_argument("File doesn't exist");
+    }
 
     size = 0;
     // Each line in CSV is a single pool member data
@@ -32,6 +35,21 @@ DistributedArray::DistributedArray(std::string filename)
     // Assuming all nodes are the same size.
     // This needs to be adjusted if the nodes are not even
     size_node = nodes.back().size();
+}
+
+// Create nodes from a vector of vectors
+// Assuming all the nodes are the same size
+DistributedArray::DistributedArray(const std::vector<std::vector<int> > &data)
+{
+    size = 0;
+    size_node = 0;
+
+    for(size_t i = 0; i < data.size(); i++) {
+        nodes.push_back(data[i]);
+
+        size_node = data[i].size();
+        size += size_node;
+    }
 }
 
 // Distributed operations

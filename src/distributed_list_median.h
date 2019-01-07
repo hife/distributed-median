@@ -18,6 +18,7 @@ class DistributedArray
     // Read nodes data from a CSV-file filename.
     // Each line is a data for a separate node
     DistributedArray(std::string filename);
+    DistributedArray(const std::vector<std::vector<int> > &data);
 
     // Basic operations with elements on a Distributed Array.
     void swap(size_t from, size_t to); // Swap two element values via global indeces
