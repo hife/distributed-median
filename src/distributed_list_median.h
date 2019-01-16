@@ -35,11 +35,10 @@ class DistributedArray
 // Order Statistics functions
 // partition array between given indeces using first index as a pivot element,
 // return index of the new place for first
-size_t partition(DistributedArray a, size_t first, size_t last);
-int64_t orderStatistic(DistributedArray a, size_t k, size_t first, size_t last);
-
-int64_t kthSmallest(DistributedArray a, size_t k);
-int64_t kthLargest(DistributedArray a, size_t k);
-float median(DistributedArray a);
+std::pair<size_t, size_t> partition(DistributedArray &a, size_t first, size_t last);
+int64_t orderStatistic(DistributedArray &a, size_t k, size_t first, size_t last);
+int64_t kthSmallest(DistributedArray &a, size_t k);
+int64_t kthLargest(DistributedArray &a, size_t k);
+double median(DistributedArray &a);
 
 #endif // DISTRIBUTED_LIST_MEDIAN_H_

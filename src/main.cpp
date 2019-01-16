@@ -1,6 +1,8 @@
 #include "distributed_list_median.h"
 
 #include <iostream>
+#include <iomanip>
+#include <cmath>
 #include <string>
 
 int main(int argc, char const *argv[])
@@ -15,7 +17,13 @@ int main(int argc, char const *argv[])
     std::string filename(argv[1]);
 
     DistributedArray a(filename);
-    std::cout << median(a) << std::endl;
+    double m = median(a); 
+
+    // Double without trailing zeroes
+    std::cout << std::fixed;
+    std::cout << std::setprecision((std::abs(m - int64_t(m)) > 0) ? 1 : 0); 
+    
+    std::cout << m << std::endl;
 
     return 0;
 }

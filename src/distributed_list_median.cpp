@@ -16,6 +16,8 @@ DistributedArray::DistributedArray(std::string filename)
     // Each line in CSV is a single pool member data
     while (std::getline(infile, line))
     {
+        if (line.empty()) return;
+
         std::stringstream lineStream(line);
 
         // Add new pool member
@@ -26,7 +28,8 @@ DistributedArray::DistributedArray(std::string filename)
         std::string data;
         while (std::getline(lineStream, data, ','))
         {
-            m_nodes.back().push_back(std::stoi(data));
+            // std::cout << "Data: " << data << std::endl;
+            m_nodes.back().push_back(std::stoll(data));
             m_size++;
         }
     }
@@ -101,65 +104,63 @@ void DistributedArray::print()
 }
 
 // Order Statistics functions
-// TODO: create a separate class for abstracted Order Statistics
-size_t partition(DistributedArray a, size_t first, size_t last)
-{
-    int64_t pivot = a[first];
-    size_t pivotPosition = first;
+// Partition function within ranges of first to last and 
+// return pair of two indexes smaller 
+std::pair<size_t, size_t> partition(DistributedArray &a, size_t first, size_t last) { 
+    // Middle element as pivot
+    size_t pivotIndex = (first + last) / 2;
+    int64_t pivot = a[pivotIndex];
 
-    first++;
-    while (first <= last)
+    size_t smaller = first; // last index of elements smaller than pivot
+    size_t equal = first;   // last index of elements equal to pivot
+    size_t larger = last;   // first index of elements larger than pivot
+  
+    while (equal <= larger) 
     {
-        // Check right
-        while (first <= last && a[first] > pivot)
-            first++;
-
-        // Check left
-        while (last >= first && a[last] <= pivot)
-            last--;
-
-        // Move into the proper position
-        if (first > last)
-        {
-            a.swap(pivotPosition, last);
+        if (a[equal] < pivot) {
+            a.swap(smaller++, equal++);
         }
-        else
-        {
-            a.swap(first, last);
+        else if (a[equal] == pivot) {
+            equal++;
+        }
+        else {
+            a.swap(equal, larger);
+            larger--;
         }
     }
-    return last;
+
+    return std::make_pair(smaller, larger);
 }
 
-int64_t orderStatistic(DistributedArray a, size_t k, size_t first, size_t last)
+int64_t orderStatistic(DistributedArray &a, size_t k, size_t first, size_t last)
 {
     if (k > a.size()) {
         throw std::invalid_argument( "Requested order k is out of boundries." );    
     }
 
-    size_t pivotPosition = partition(a, first, last);
+    std::pair<size_t, size_t> pivotPosition = partition(a, first, last);
 
     // Check if the element is in the desired position k
-    if (pivotPosition == k - 1)
+    if (pivotPosition.first <= k - 1 && pivotPosition.second >= k - 1)
         return a[k - 1];
 
     return 
-        pivotPosition > k - 1 ? 
-            orderStatistic(a, k, first, pivotPosition - 1) : 
-            orderStatistic(a, k, pivotPosition + 1, last);
+        pivotPosition.first > k - 1 ? 
+            orderStatistic(a, k, first, pivotPosition.first) : 
+            orderStatistic(a, k, pivotPosition.second, last);
 }
 
-int64_t kthSmallest(DistributedArray a, size_t k)
+int64_t kthSmallest(DistributedArray &a, size_t k)
 {
     return orderStatistic(a, k, 0, a.size() - 1);
 }
 
-int64_t kthLargest(DistributedArray a, size_t k)
+int64_t kthLargest(DistributedArray &a, size_t k)
 {
     return orderStatistic(a, a.size() - k + 1, 0, a.size() - 1);
 }
 
-float median(DistributedArray a)
+double median(DistributedArray &a)
 {
     // Median of the array will be middle element 
     // or avarage of two middle elements in case of even size of array 
@@ -170,6 +171,5 @@ float median(DistributedArray a)
         return kthSmallest(a, mid + 1);
 
     // even size
-    return float(kthSmallest(a, mid) + kthLargest(a, mid)) / 2;
+    return double(kthSmallest(a, mid) + kthLargest(a, mid)) / 2;
 }
-

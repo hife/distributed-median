@@ -55,7 +55,7 @@ void TestDistributedKthLargest(std::string filename, size_t k, float expected)
     std::cout << "* K-th Largest for " << filename << " - OK" << std::endl;
 }
 
-void TestDistributedMedian(std::string filename, float expected) 
+void TestDistributedMedian(std::string filename, double expected) 
 {
     DistributedArray a(filename);
     assert(median(a) == expected);
@@ -65,18 +65,25 @@ void TestDistributedMedian(std::string filename, float expected)
 int main(int argc, char const *argv[])
 {
     // Basic Unit Tests
-    TestDistributedArrayFromFile("example0.txt");
+    TestDistributedArrayFromFile("00_simple_two_nodes.txt");
     TestDistributedArrayFromVectors();
 
     // Functional Tests
-    TestDistributedKthSmallest("example0.txt", 7, 7);
-    TestDistributedKthSmallest("example1.txt", 12, 12);
+    TestDistributedKthSmallest("00_simple_two_nodes.txt", 7, 7);
+    TestDistributedKthSmallest("01_simple_three_nodes.txt", 12, 12);
 
-    TestDistributedKthLargest("example0.txt", 2, 9);
-    TestDistributedKthLargest("example1.txt", 2, 14);
+    TestDistributedKthLargest("00_simple_two_nodes.txt", 2, 9);
+    TestDistributedKthLargest("01_simple_three_nodes.txt", 2, 14);
 
-    TestDistributedMedian("example0.txt", 5.5);
-    TestDistributedMedian("example1.txt", 8);
+    TestDistributedMedian("00_simple_two_nodes.txt", 5.5);
+    TestDistributedMedian("01_simple_three_nodes.txt", 8);
+    // FIX: TestDistributedMedian("02_simple_empty.txt", 0);
+    TestDistributedMedian("03_simple_one_node.txt", 5.5);
+    TestDistributedMedian("04_mix_negative_numbers.txt", 2.5);
+    TestDistributedMedian("05_28_nodes.txt", 3);
+    TestDistributedMedian("06_12_one_number_nodes.txt", 6.5);
+    TestDistributedMedian("07_long_long_numbers.txt", 922337203685477);
+    TestDistributedMedian("08_all_negative_numbers.txt", -3.5);
 
     return 0;
 }
